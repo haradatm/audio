@@ -112,12 +112,12 @@ python train_both-bilstm.py --batchsize 100 --epoch 300 --burnin 100 --layer_t 1
 
 ***Output***
 
-- 01-turn-1.log (use **train_mlp.py**)
+- 01-turn-1.log (use **train_both-bilstm.py**)
 ```
-2018-06-13 07:47:34,549 - main - INFO - [  1] T/loss=640.268173 T/acc1=0.333333 T/acc2=0.000000 T/sec= 0.035807 D/loss=389.692932 D/acc1=0.340000 D/acc2=0.000000 D/sec= 0.136682 lr=0.001000
+2018-07-05 12:22:05,491 - main - INFO - [  1] T/loss=1.111592 T/acc1=0.363333 T/acc2=0.000000 T/sec= 0.385696 D/loss=1.060488 D/acc1=0.370000 D/acc2=0.280000 D/sec= 1.075764 lr=0.001000
  :
-2018-06-13 07:51:19,903 - main - INFO - [300] T/loss=0.000054 T/acc1=1.000000 T/acc2=0.000000 T/sec= 0.441888 D/loss=9.569883 D/acc1=0.713333 D/acc2=0.000000 D/sec= 0.291807 lr=0.001000
-2018-06-13 07:51:20,491 - main - INFO - time spent: 227.100839 sec
+2018-07-05 12:31:59,461 - main - INFO - [300] T/loss=0.090317 T/acc1=0.980000 T/acc2=0.965000 T/sec= 0.724062 D/loss=0.650186 D/acc1=0.766667 D/acc2=0.790000 D/sec= 0.937508 lr=0.001000
+2018-07-05 12:32:00,059 - main - INFO - time spent: 597.156162 sec
 ```
 
 - 0[1-3]-turn-1.png (use **train_mlp.py**)
