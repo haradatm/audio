@@ -34,7 +34,7 @@ import matplotlib.pyplot as plt
 
 
 def load_data(filename, labels={}, n_feature=384):
-    X, y = [], []
+    X, y, z = [], [], []
 
     for i, line in enumerate(open(filename, 'rU')):
         # if i == 0:
@@ -56,34 +56,33 @@ def load_data(filename, labels={}, n_feature=384):
 
         X.append(chainer.Variable(xp.asarray(row[1:-(n_turn+1)], dtype=np.float32).reshape((n_turn, n_feature))))
         y.append(chainer.Variable(xp.asarray([labels[x] for x in row[-(n_turn+1):-1]], dtype=np.int32)))
+        z.append(chainer.Variable(xp.asarray([labels[row[-1]]])))
 
     print('Loading dataset ... done.')
     sys.stdout.flush()
 
-    return X, y, labels
+    return X, y, z, labels
 
 
 # # Network definition
-class RNN(chainer.Chain):
+class SER(chainer.Chain):
 
-    def __init__(self, n_units, n_output):
-        super(RNN, self).__init__()
+    def __init__(self, n_input, n_layer, n_units, n_output):
+        super(SER, self).__init__()
         with self.init_scope():
-            self.l1 = L.NStepLSTM(3, n_units, n_units, 0.25)
-            self.l2 = L.Linear(n_units, n_output)
+            self.l1 = L.NStepBiLSTM(n_layer, n_input, n_units, 0.25)
+            self.l2 = L.Linear(n_units * 2, n_output)
 
     def __call__(self, xs, ts):
-
         accum_loss = None
         accum_accuracy = None
 
-        cx = None
         hx = None
-        ns = len(ts)
+        cx = None
 
-        hy, cy, ys = self.l1(cx, hx, xs)
+        hx, cx, ys = self.l1(hx, cx, xs)
 
-        for i in range(ns):
+        for i in range(len(ts)):
             y, t = self.l2(ys[i]), ts[i]
             loss, accuracy = F.softmax_cross_entropy(y, t), F.accuracy(y, t)
             accum_loss = loss if accum_loss is None else accum_loss + loss
@@ -107,16 +106,17 @@ def main():
     global xp
 
     import argparse
-    parser = argparse.ArgumentParser(description='SER example: NStep LSTM')
-    parser.add_argument('--batchsize', '-b', type=int, default=100, help='Number of images in each mini-batch')
-    parser.add_argument('--epoch', '-e', type=int, default=300, help='Number of sweeps over the dataset to train')
+    parser = argparse.ArgumentParser(description='SER example: NStep BiLSTM')
     parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU ID (negative value indicates CPU)')
-    parser.add_argument('--out', '-o', default='result', help='Directory to output the result')
-    parser.add_argument('--resume', '-r', default='', help='Resume the training from snapshot')
-    parser.add_argument('--unit', '-u', type=int, default=1000, help='Number of units')
-    parser.add_argument('--noplot', dest='plot', action='store_true', help='Disable PlotReport extension')
+    parser.add_argument('--layer', type=int, default=1,    help='Number of layes for turn')
+    parser.add_argument('--unit',  type=int, default=256,  help='Number of units for turn')
+    parser.add_argument('--dim',   type=int, default=384,  help='Number of dimensions')
+    parser.add_argument('--batchsize', '-b', type=int, default=3,  help='Number of images in each mini-batch')
+    parser.add_argument('--epoch',     '-e', type=int, default=20, help='Number of sweeps over the dataset to train')
     parser.add_argument('--train', default='train.tsv', type=str, help='training file (.txt)')
     parser.add_argument('--test',  default='test.tsv',  type=str, help='evaluating file (.txt)')
+    parser.add_argument('--out', '-o', default='result', help='Directory to output the result')
+    parser.add_argument('--noplot', dest='plot', action='store_true', help='Disable PlotReport extension')
     args = parser.parse_args()
     # args = parser.parse_args(args=[])
     print(json.dumps(args.__dict__, indent=2))
@@ -132,25 +132,22 @@ def main():
         os.mkdir(model_dir)
 
     # データの読み込み
-    X_train, y_train, labels = load_data(args.train)
-    X_test,  y_test,  labels = load_data(args.test, labels=labels)
+    X_train, y_train, z_train, labels = load_data(args.train)
+    X_test,  y_test,  z_test,  labels = load_data(args.test, labels=labels)
 
     n_class = len(labels)
-    n_unit = args.unit
 
     print('# train X: {}, y: {}, class: {}'.format(len(X_train), len(y_train), len(labels)))
     print('# eval  X: {}, y: {}, class: {}'.format(len(X_test), len(y_test), len(labels)))
     print('# class: {}'.format(n_class))
-    print('# unit: {}'.format(n_unit))
     sys.stdout.flush()
 
-    model = RNN(384, n_class)
+    model = SER(args.dim, args.layer, args.unit, n_class)
     if args.gpu >= 0:
         model.to_gpu(args.gpu)
 
     # 重み減衰
-    # decay = 0.0001
-    decay = 0.0005
+    decay = 0.0001
 
     # 勾配上限
     grad_clip = 3
@@ -159,8 +156,7 @@ def main():
     lr_decay = 0.995
 
     # Setup optimizer (Optimizer の設定)
-    # optimizer = chainer.optimizers.Adam(alpha=0.0007)
-    optimizer = chainer.optimizers.Adam()
+    optimizer = chainer.optimizers.Adam(alpha=0.001)
     optimizer.setup(model)
     # optimizer.add_hook(chainer.optimizer.GradientClipping(grad_clip))
     # optimizer.add_hook(chainer.optimizer.WeightDecay(decay))
@@ -183,13 +179,13 @@ def main():
     for epoch in range(1, args.epoch + 1):
 
         # training
-        train_iter = batch_tuple([(s, t) for s, t in zip(X_train, y_train)], args.batchsize)
+        train_iter = batch_tuple([(s, t1, t2) for s, t1, t2 in zip(X_train, y_train, z_train)], args.batchsize)
         sum_train_loss = 0.
         sum_train_accuracy1 = 0.
         sum_train_accuracy2 = 0.
         K = 0
 
-        for X, y in train_iter:
+        for X, y, z in train_iter:
 
             # 勾配を初期化
             model.cleargrads()
@@ -198,6 +194,7 @@ def main():
             loss, accuracy = model(X, y)
             sum_train_loss += float(loss.data)
             sum_train_accuracy1 += float(accuracy.data)
+            sum_train_accuracy2 += .0
             K += len(y)
 
             # 誤差逆伝播で勾配を計算
@@ -216,19 +213,20 @@ def main():
         cur_at = now
 
         # evaluation
-        test_iter = batch_tuple([(s, t) for s, t in zip(X_test, y_test)], 1)
+        test_iter = batch_tuple([(s, t1, t2) for s, t1, t2 in zip(X_test, y_test, z_test)], 1)
         sum_test_loss = 0.
         sum_test_accuracy1 = 0.
         sum_test_accuracy2 = 0.
         K = 0
 
         with chainer.no_backprop_mode(), chainer.using_config('train', False):
-            for X, y in test_iter:
+            for X, y, z in test_iter:
 
                 # 順伝播させて誤差と精度を算出
                 loss, accuracy = model(X, y)
                 sum_test_loss += float(loss.data)
                 sum_test_accuracy1 += float(accuracy.data)
+                sum_test_accuracy2 += .0
                 K += len(y)
 
         # テストデータでの誤差と正解精度を表示
@@ -300,7 +298,7 @@ def main():
             plt.yticks(np.arange(ylim2[0], ylim2[1], .1))
             plt.grid(True)
             # plt.ylabel('accuracy')
-            plt.legend(['train accuracy'], loc="upper right")
+            plt.legend(['train turn', 'train call'], loc="upper right")
             plt.title('Loss and accuracy of train.')
 
             # グラフ右
@@ -317,7 +315,7 @@ def main():
             plt.yticks(np.arange(ylim2[0], ylim2[1], .1))
             plt.grid(True)
             plt.ylabel('accuracy')
-            plt.legend(['dev accuracy'], loc="upper right")
+            plt.legend(['dev turn', 'dev call'], loc="upper right")
             plt.title('Loss and accuracy of dev.')
 
             plt.savefig('{}.png'.format(args.out))

@@ -90,10 +90,11 @@ cat 01-test.txt 02-test.txt > 03-train.txt
 ***Run and Evaluate***
 
 ```
-python train_mlp.py        --train ../datasets/01-train.txt --test ../datasets/01-test.txt --out 01-rnn-1 2>&1 | tee 01-rnn-1.log
-python train_rnn-lstm.py   --train ../datasets/01-train.txt --test ../datasets/01-test.txt --out 01-rnn-2 2>&1 | tee 01-rnn-2.log
-python train_rnn-nstep.py  --train ../datasets/01-train.txt --test ../datasets/01-test.txt --out 01-rnn-3 2>&1 | tee 01-rnn-3.log
-python train_rnn-bilstm.py --train ../datasets/01-train.txt --test ../datasets/01-test.txt --out 01-rnn-4 2>&1 | tee 01-rnn-4.log
+python train_turn-mlp.py    --batchsize 100 --epoch 300           --unit 256 --train ../datasets/01-train.txt --test ../datasets/01-test.txt --out 01-turn-1 2>&1 | tee 01-turn-1.log
+python train_turn-lstm.py   --batchsize 100 --epoch 300           --unit 256 --train ../datasets/01-train.txt --test ../datasets/01-test.txt --out 01-turn-2 2>&1 | tee 01-turn-2.log
+python train_turn-nstep.py  --batchsize 100 --epoch 300 --layer 3 --unit 256 --train ../datasets/01-train.txt --test ../datasets/01-test.txt --out 01-turn-3 2>&1 | tee 01-turn-3.log
+python train_turn-bilstm.py --batchsize 100 --epoch 300 --layer 1 --unit 256 --train ../datasets/01-train.txt --test ../datasets/01-test.txt --out 01-turn-4 2>&1 | tee 01-turn-4.log
+python train_both-bilstm.py --batchsize 100 --epoch 300 --burnin 100 --layer_t 1 --unit_t 256 --layer_c 1 --unit_c 64 --train ../datasets/01-train.txt --test ../datasets/01-test.txt --out 01-both-1 2>&1 | tee 01-both-1.log
 ```
 
 ***Input***
@@ -111,7 +112,7 @@ python train_rnn-bilstm.py --train ../datasets/01-train.txt --test ../datasets/0
 
 ***Output***
 
-- 01-rnn-1.log (use **train_mlp.py**)
+- 01-turn-1.log (use **train_mlp.py**)
 ```
 2018-06-13 07:47:34,549 - main - INFO - [  1] T/loss=640.268173 T/acc1=0.333333 T/acc2=0.000000 T/sec= 0.035807 D/loss=389.692932 D/acc1=0.340000 D/acc2=0.000000 D/sec= 0.136682 lr=0.001000
  :
@@ -119,18 +120,22 @@ python train_rnn-bilstm.py --train ../datasets/01-train.txt --test ../datasets/0
 2018-06-13 07:51:20,491 - main - INFO - time spent: 227.100839 sec
 ```
 
-- 0[1-3]-rnn-1.png (use **train_mlp.py**)
+- 0[1-3]-turn-1.png (use **train_mlp.py**)
 
-<img src="results/01-rnn-1.png" width="262px" height="261px"/> <img src="results/02-rnn-1.png" width="262px" height="261px"/> <img src="results/03-rnn-1.png" width="262px" height="261px"/>
+<img src="results/01-turn-1.png" width="262px" height="261px"/> <img src="results/02-turn-1.png" width="262px" height="261px"/> <img src="results/03-turn-1.png" width="262px" height="261px"/>
 
-- 0[1-3]-rnn-2.png (use **train_rnn-lstm.py**)
+- 0[1-3]-turn-2.png (use **train_turn-lstm.py**)
 
-<img src="results/01-rnn-2.png" width="262px" height="261px"/> <img src="results/02-rnn-2.png" width="262px" height="261px"/> <img src="results/03-rnn-2.png" width="262px" height="261px"/>
+<img src="results/01-turn-2.png" width="262px" height="261px"/> <img src="results/02-turn-2.png" width="262px" height="261px"/> <img src="results/03-turn-2.png" width="262px" height="261px"/>
 
-- 0[1-3]-rnn-3.png (use **train_rnn-nstep.py**)
+- 0[1-3]-turn-3.png (use **train_turn-nstep.py**)
 
-<img src="results/01-rnn-3.png" width="262px" height="261px"/> <img src="results/02-rnn-3.png" width="262px" height="261px"/> <img src="results/03-rnn-3.png" width="262px" height="261px"/>
+<img src="results/01-turn-3.png" width="262px" height="261px"/> <img src="results/02-turn-3.png" width="262px" height="261px"/> <img src="results/03-turn-3.png" width="262px" height="261px"/>
 
-- 0[1-3]-rnn-4.png (use **train_rnn-bilstm.py**)
+- 0[1-3]-turn-4.png (use **train_turn-bilstm.py**)
 
-<img src="results/01-rnn-4.png" width="262px" height="261px"/> <img src="results/02-rnn-4.png" width="262px" height="261px"/> <img src="results/03-rnn-4.png" width="262px" height="261px"/>
+<img src="results/01-turn-4.png" width="262px" height="261px"/> <img src="results/02-turn-4.png" width="262px" height="261px"/> <img src="results/03-turn-4.png" width="262px" height="261px"/>
+
+- 0[1-3]-both-1.png (use **train_both-bilstm.py**)
+
+<img src="results/01-both-1.png" width="262px" height="261px"/> <img src="results/02-both-1.png" width="262px" height="261px"/> <img src="results/03-both-1.png" width="262px" height="261px"/>
