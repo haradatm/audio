@@ -6,7 +6,7 @@
 
 __version__ = '0.0.1'
 
-import sys, time, logging, os, json
+import sys, time, logging, os, json, random
 import numpy as np
 np.set_printoptions(precision=20)
 logger = logging.getLogger(__name__)
@@ -16,6 +16,7 @@ handler = logging.StreamHandler()
 handler.setFormatter(logging.Formatter('%(asctime)s - %(funcName)s - %(levelname)s - %(message)s'))
 handler.setLevel(logging.DEBUG)
 logger.addHandler(handler)
+
 
 def pp(obj):
     import pprint
@@ -31,6 +32,7 @@ from chainer import cuda
 import chainer.functions as F
 import chainer.links as L
 import matplotlib.pyplot as plt
+import pickle
 
 
 def load_data(filename, labels={}, n_feature=384):
@@ -120,12 +122,19 @@ def main():
     args = parser.parse_args()
     # args = parser.parse_args(args=[])
     print(json.dumps(args.__dict__, indent=2))
+    sys.stdout.flush()
+
+    seed = 123
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    random.seed(seed)
+    np.random.seed(seed)
 
     if args.gpu >= 0:
-        cuda.get_device_from_id(args.gpu).use()
+        chainer.backends.cuda.get_device_from_id(args.gpu).use()
+        cuda.check_cuda_available()
+        cuda.cupy.random.seed(seed)
 
     xp = cuda.cupy if args.gpu >= 0 else np
-    xp.random.seed(123)
 
     model_dir = args.out
     if not os.path.exists(model_dir):
@@ -141,6 +150,9 @@ def main():
     print('# eval  X: {}, y: {}, class: {}'.format(len(X_test), len(y_test), len(labels)))
     print('# class: {}'.format(n_class))
     sys.stdout.flush()
+
+    with open(os.path.join(args.out, 'labels.pkl'), 'wb') as f:
+        pickle.dump(labels, f)
 
     model = SER(args.dim, args.layer, args.unit, n_class)
     if args.gpu >= 0:

@@ -6,7 +6,7 @@
 
 __version__ = '0.0.1'
 
-import sys, time, logging, os, json
+import sys, time, logging, os, json, random
 import numpy as np
 np.set_printoptions(precision=20)
 logger = logging.getLogger(__name__)
@@ -16,6 +16,7 @@ handler = logging.StreamHandler()
 handler.setFormatter(logging.Formatter('%(asctime)s - %(funcName)s - %(levelname)s - %(message)s'))
 handler.setLevel(logging.DEBUG)
 logger.addHandler(handler)
+
 
 def pp(obj):
     import pprint
@@ -31,6 +32,7 @@ from chainer import cuda
 import chainer.functions as F
 import chainer.links as L
 import matplotlib.pyplot as plt
+import pickle
 
 
 def load_data(filename, labels={}, n_feature=384):
@@ -54,7 +56,7 @@ def load_data(filename, labels={}, n_feature=384):
             if label not in labels:
                 labels[label] = len(labels)
 
-        X.append(tuple([_ for _ in np.asarray(row[1:-(n_turn+1)], dtype=np.float32).reshape((n_turn, n_feature))]))
+        X.append(xp.asarray(row[1:-(n_turn+1)], dtype=np.float32).reshape((n_turn, n_feature)))
         y.append(xp.asarray([labels[x] for x in row[-(n_turn+1):-1]], dtype=np.int32))
         z.append(xp.asarray([labels[row[-1]]]))
 
@@ -70,26 +72,24 @@ class SER(chainer.Chain):
     def __init__(self, n_input, n_units, n_output):
         super(SER, self).__init__()
         with self.init_scope():
-            self.l1 = L.StatelessLSTM(n_input, n_input)
-            self.l2 = L.Linear(n_input, n_output)
+            # the size of the inputs to each layer will be inferred
+            self.l1 = L.Linear(None, n_units)   # n_in -> n_units
+            self.l2 = L.Linear(None, n_units)   # n_units -> n_units
+            self.l3 = L.Linear(None, n_output)  # n_units -> n_out
 
     def __call__(self, x, t):
         accum_loss = None
         accum_accuracy = None
 
-        cx = xp.zeros((x.shape[0], x.shape[2]), dtype=np.float32)
-        hx = xp.zeros((x.shape[0], x.shape[2]), dtype=np.float32)
-        width = x.shape[1]
-
-        for i in range(width):
-            cx, hx = self.l1(cx, hx, x[:, i, :])
-            y = self.l2(hx)
-
+        for i in range(x.shape[1]):
+            h1 = F.relu(self.l1(x[:, i, :]))
+            h2 = F.relu(self.l2(h1))
+            y = self.l3(h2)
             loss, accuracy = F.softmax_cross_entropy(y, t[:, i]), F.accuracy(y, t[:, i])
             accum_loss = loss if accum_loss is None else accum_loss + loss
             accum_accuracy = accuracy if accum_accuracy is None else accum_accuracy + accuracy
 
-        return accum_loss / width, accum_accuracy / width
+        return accum_loss / 3, accum_accuracy / 3
 
 
 def batch_tuple(generator, batch_size):
@@ -107,9 +107,8 @@ def main():
     global xp
 
     import argparse
-    parser = argparse.ArgumentParser(description='SER example: Simple LSTM')
+    parser = argparse.ArgumentParser(description='SER example: MLP')
     parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU ID (negative value indicates CPU)')
-    parser.add_argument('--layer', type=int, default=1,    help='Number of layes for turn')
     parser.add_argument('--unit',  type=int, default=256,  help='Number of units for turn')
     parser.add_argument('--dim',   type=int, default=384,  help='Number of dimensions')
     parser.add_argument('--batchsize', '-b', type=int, default=3,  help='Number of images in each mini-batch')
@@ -121,12 +120,19 @@ def main():
     args = parser.parse_args()
     # args = parser.parse_args(args=[])
     print(json.dumps(args.__dict__, indent=2))
+    sys.stdout.flush()
+
+    seed = 123
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    random.seed(seed)
+    np.random.seed(seed)
 
     if args.gpu >= 0:
-        cuda.get_device_from_id(args.gpu).use()
+        chainer.backends.cuda.get_device_from_id(args.gpu).use()
+        cuda.check_cuda_available()
+        cuda.cupy.random.seed(seed)
 
     xp = cuda.cupy if args.gpu >= 0 else np
-    xp.random.seed(123)
 
     model_dir = args.out
     if not os.path.exists(model_dir):
@@ -142,6 +148,9 @@ def main():
     print('# eval  X: {}, y: {}, class: {}'.format(len(X_test), len(y_test), len(labels)))
     print('# class: {}'.format(n_class))
     sys.stdout.flush()
+
+    with open(os.path.join(args.out, 'labels.pkl'), 'wb') as f:
+        pickle.dump(labels, f)
 
     model = SER(args.dim, args.unit, n_class)
     if args.gpu >= 0:
@@ -297,7 +306,7 @@ def main():
             plt.twinx()
             plt.ylim(ylim2)
             plt.plot(range(1, len(train_accuracy1) + 1), train_accuracy1, color='C0', marker='x')
-            plt.plot(range(1, len(train_accuracy2) + 1), train_accuracy2, color='C2', marker='x')
+            # plt.plot(range(1, len(train_accuracy2) + 1), train_accuracy2, color='C2', marker='x')
             plt.yticks(np.arange(ylim2[0], ylim2[1], .1))
             plt.grid(True)
             # plt.ylabel('accuracy')
@@ -314,7 +323,7 @@ def main():
             plt.twinx()
             plt.ylim(ylim2)
             plt.plot(range(1, len(test_accuracy1) + 1), test_accuracy1, color='C0', marker='x')
-            plt.plot(range(1, len(test_accuracy2) + 1), test_accuracy2, color='C2', marker='x')
+            # plt.plot(range(1, len(test_accuracy2) + 1), test_accuracy2, color='C2', marker='x')
             plt.yticks(np.arange(ylim2[0], ylim2[1], .1))
             plt.grid(True)
             plt.ylabel('accuracy')

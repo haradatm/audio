@@ -97,6 +97,10 @@ python train_turn-bilstm.py --batchsize 100 --epoch 300 --layer 1 --unit 256 --t
 python train_both-bilstm.py --batchsize 100 --epoch 300 --burnin 100 --layer_t 1 --unit_t 256 --layer_c 1 --unit_c 64 --train ../datasets/01-train.txt --test ../datasets/01-test.txt --out 01-both-1 2>&1 | tee 01-both-1.log
 ```
 
+```
+python test_turn-bilstm.py --model 01-turn-4/final.model --label 01-turn-4/labels.pkl --test ../datasets/01-test.txt 2>&1 | tee test-01-turn-4.log
+```
+
 ***Input***
 
 - format
