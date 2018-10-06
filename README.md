@@ -202,7 +202,7 @@ avg / total       0.80      0.78      0.78       300
 
 <img src="results/01-turn-4-train_cm.png"/>
 
-- 01-turn-4-test_cm.png (use **test_turn-bilstm.py**)
+- 01-turn-4-test_cm.png (use **test_turn-bilstm.py** and **final.model**)
 
 <img src="results/01-turn-4-test_cm.png"/>
 
