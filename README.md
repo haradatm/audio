@@ -102,6 +102,7 @@ python train_both-bilstm.py --batchsize 100 --epoch 300 --burnin 100 --layer_t 1
 ```
 python train_turn-bilstm-with_cm.py --batchsize 100 --epoch 300 --layer 1 --unit 256 --train ../datasets/01-train.txt --test ../datasets/01-test.txt --out 01-turn-4 2>&1 | tee 01-turn-4-with_cm.log
 python test_turn-bilstm.py --model 01-turn-4/final.model --label 01-turn-4/labels.pkl --test ../datasets/01-test.txt --out 01-turn-4 | tee 01-turn-4-test.log```
+```
 
 ***Input***
 
@@ -200,9 +201,9 @@ avg / total       0.80      0.78      0.78       300
 
 - 01-turn-4-train_cm.png (use **train_turn-bilstm-with_cm.py**)
 
-<img src="results/01-turn-4-train_cm.png" width="262px" height="261px"/>
+<img src="results/01-turn-4-train_cm.png"/>
 
 - 01-turn-4-test_cm.png (use **test_turn-bilstm.py**)
 
-<img src="results/01-turn-4-test_cm.png" width="262px" height="261px"/>
+<img src="results/01-turn-4-test_cm.png"/>
 
