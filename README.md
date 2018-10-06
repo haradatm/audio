@@ -132,7 +132,6 @@ python test_turn-bilstm.py --model 01-turn-4/final.model --label 01-turn-4/label
 2018-10-06 13:25:23,265 - main - INFO - [  1] T/loss=1.111592 T/acc1=0.363333 T/acc2=0.000000 T/sec= 0.333246 D/loss=1.049114 D/acc1=0.370000 D/acc2=0.000000 D/sec= 0.611305 lr=0.001000
  :
 2018-10-06 13:31:49,246 - <module> - INFO - time spent: 387.897333 sec
-```
 
 ==== Confusion matrix ====
 
@@ -206,4 +205,5 @@ avg / total       0.80      0.78      0.78       300
 - 01-turn-4-test_cm.png (use **test_turn-bilstm.py**)
 
 <img src="results/01-turn-4-test_cm.png"/>
+
 
