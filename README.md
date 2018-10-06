@@ -97,9 +97,11 @@ python train_turn-bilstm.py --batchsize 100 --epoch 300 --layer 1 --unit 256 --t
 python train_both-bilstm.py --batchsize 100 --epoch 300 --burnin 100 --layer_t 1 --unit_t 256 --layer_c 1 --unit_c 64 --train ../datasets/01-train.txt --test ../datasets/01-test.txt --out 01-both-1 2>&1 | tee 01-both-1.log
 ```
 
+***Additional Evaluate***
+
 ```
-python test_turn-bilstm.py --model 01-turn-4/final.model --label 01-turn-4/labels.pkl --test ../datasets/01-test.txt 2>&1 | tee test-01-turn-4.log
-```
+python train_turn-bilstm-with_cm.py --batchsize 100 --epoch 300 --layer 1 --unit 256 --train ../datasets/01-train.txt --test ../datasets/01-test.txt --out 01-turn-4 2>&1 | tee 01-turn-4-with_cm.log
+python test_turn-bilstm.py --model 01-turn-4/final.model --label 01-turn-4/labels.pkl --test ../datasets/01-test.txt --out 01-turn-4 | tee 01-turn-4-test.log```
 
 ***Input***
 
@@ -124,6 +126,57 @@ python test_turn-bilstm.py --model 01-turn-4/final.model --label 01-turn-4/label
 2018-07-05 12:32:00,059 - main - INFO - time spent: 597.156162 sec
 ```
 
+- 01-turn-4-with_cm.log (use **train_turn-bilstm-with_cm.py**)
+```
+2018-10-06 13:25:23,265 - main - INFO - [  1] T/loss=1.111592 T/acc1=0.363333 T/acc2=0.000000 T/sec= 0.333246 D/loss=1.049114 D/acc1=0.370000 D/acc2=0.000000 D/sec= 0.611305 lr=0.001000
+ :
+2018-10-06 13:31:49,246 - <module> - INFO - time spent: 387.897333 sec
+
+==== Confusion matrix ====
+
+	angry	normal	happy
+angry	84	15	1
+normal	32	68	0
+happy	10	9	81
+
+==== Classification report ====
+
+             precision    recall  f1-score   support
+
+      angry       0.67      0.84      0.74       100
+     normal       0.74      0.68      0.71       100
+      happy       0.99      0.81      0.89       100
+
+avg / total       0.80      0.78      0.78       300
+
+2018-07-05 12:32:00,059 - main - INFO - time spent: 597.156162 sec
+```
+
+- 01-turn-4-test.log (use **test_turn-bilstm**)
+```
+angry:0.4094	happy:0.5775	happy:0.8487	
+angry:0.9498	normal:0.7697	angry:0.8968	
+ :
+angry:0.5563	angry:0.7795	angry:0.9994	
+
+==== Confusion matrix ====
+
+	angry	normal	happy
+angry	84	15	1
+normal	32	68	0
+happy	10	9	81
+
+==== Classification report ====
+
+             precision    recall  f1-score   support
+
+      angry       0.67      0.84      0.74       100
+     normal       0.74      0.68      0.71       100
+      happy       0.99      0.81      0.89       100
+
+avg / total       0.80      0.78      0.78       300
+```
+
 - 0[1-3]-turn-1.png (use **train_mlp.py**)
 
 <img src="results/01-turn-1.png" width="262px" height="261px"/> <img src="results/02-turn-1.png" width="262px" height="261px"/> <img src="results/03-turn-1.png" width="262px" height="261px"/>
@@ -143,3 +196,12 @@ python test_turn-bilstm.py --model 01-turn-4/final.model --label 01-turn-4/label
 - 0[1-3]-both-1.png (use **train_both-bilstm.py**)
 
 <img src="results/01-both-1.png" width="262px" height="261px"/> <img src="results/02-both-1.png" width="262px" height="261px"/> <img src="results/03-both-1.png" width="262px" height="261px"/>
+
+- 01-turn-4-train_cm.png (use **train_turn-bilstm-with_cm.py**)
+
+<img src="results/01-turn-4-train_cm.png" width="262px" height="261px"/>
+
+- 01-turn-4-test_cm.png (use **test_turn-bilstm.py**)
+
+<img src="results/01-turn-4-test_cm.png" width="262px" height="261px"/>
+
