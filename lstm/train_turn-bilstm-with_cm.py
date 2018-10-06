@@ -392,6 +392,9 @@ def main():
         if not args.plot:
             plt.figure()
             plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+            for i in range(cm.shape[0]):
+                for j in range(cm.shape[1]):
+                    plt.text(j, i, "{}".format(cm[i, j]), horizontalalignment="center", color="white" if cm[i, j] > cm.max() / 2 else "black")
             plt.title('Confusion matrix')
             plt.colorbar()
             tick_marks = np.arange(len(sorted_labels))
