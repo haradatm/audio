@@ -33,7 +33,7 @@ import chainer.functions as F
 import chainer.links as L
 import matplotlib.pyplot as plt
 import pickle
-from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix, classification_report
 
 
 def load_data(filename, labels={}, n_feature=384):
@@ -127,6 +127,7 @@ def main():
     parser.add_argument('--test',   default='test.tsv',  type=str, help='evaluating file (.txt)')
     parser.add_argument('--model',  default='final.model', type=str, help='model file (.model)')
     parser.add_argument('--label',  default='label.pkl', type=str, help='label file (.pkl)')
+    parser.add_argument('--out', '-o', default='result', help='Directory to output the result')
     parser.add_argument('--noplot', dest='plot', action='store_true', help='Disable PlotReport extension')
     args = parser.parse_args()
     # args = parser.parse_args(args=[])
@@ -173,7 +174,7 @@ def main():
 
             for pred in y_pred:
                 pred = cuda.to_cpu(pred.data)
-                idx = np.argmax(pred, axis=0)
+                idx = np.argmax(pred, axis=1)
 
                 preds.append([index2label[x] for x in idx])
                 probs.append([float(p[i]) for i, p in zip(idx, pred)])
@@ -185,10 +186,43 @@ def main():
             for i in range(len(y)):
                 trues.append([index2label[x] for x in cuda.to_cpu(y[i].data)])
 
+        sorted_labels = [k for k, _ in sorted(labels.items(), key=lambda x: x[1], reverse=False)]
+
+        print("\n==== Confusion matrix ====\n")
+        cm = confusion_matrix(
+            [inner for outer in trues for inner in outer],
+            [inner for outer in preds for inner in outer],
+            labels=sorted_labels
+        )
+
+        print("\t{}".format("\t".join(sorted_labels)))
+        for label, counts in zip(sorted_labels, cm):
+            print("{}\t{}".format(label, "\t".join(map(str, counts))))
+
+        # グラフ描画
+        if not args.plot:
+            # plt.figure(figsize=(10, 10))
+            plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+            for i in range(cm.shape[0]):
+                for j in range(cm.shape[1]):
+                    plt.text(j, i, "{}".format(cm[i, j]), horizontalalignment="center", color="white" if cm[i, j] > cm.max() / 2 else "black")
+            plt.title('Confusion matrix')
+            plt.colorbar()
+            tick_marks = np.arange(len(sorted_labels))
+            plt.xticks(tick_marks, sorted_labels, rotation=45)
+            plt.yticks(tick_marks, sorted_labels)
+            plt.tight_layout()
+            plt.ylabel('True label')
+            plt.xlabel('Predicted label')
+            plt.savefig('{}-test_cm.png'.format(args.out))
+            # plt.savefig('{}-test_cm.png'.format(os.path.splitext(os.path.basename(__file__))[0]))
+            # plt.show()
+
         print("\n==== Classification report ====\n")
         print(classification_report(
             [inner for outer in trues for inner in outer],
-            [inner for outer in preds for inner in outer]
+            [inner for outer in preds for inner in outer],
+            labels=sorted_labels
         ))
 
 
