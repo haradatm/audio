@@ -1,8 +1,8 @@
-# SER (Speech Emotion Recognition) example
+# SER (Speech Emotion Recognition) example using OpenSMILE and Bert Embeddings features
 
 ### Description
 
-This example code is a turn-based speech emotion recognition using three kinds of approaches, `Simple LSTM`, `NStep LSTM`, and `NStep BiLSTM`.
+This example code is a speech emotion recognition using OpenSMILE and Bert Embeddings features.
 
 ### Dependencies
 - python 3.6
@@ -10,200 +10,54 @@ This example code is a turn-based speech emotion recognition using three kinds o
 
 In addition, please add the project folder to PYTHONPATH and `conca install` the following packages:
 - `matplotlib`
+- `wave, python_speech_features`
+- `pickle, bz2`
 
 ### Usage ###
 
 ***Data***
 
-  - Downlod [WAV files](http://voice-statistics.github.io/) and put them in the appropriate place.
-
-```
-mkdir -p datasets && cd datasets
-
-# Normal
-wget https://github.com/voice-statistics/voice-statistics.github.com/raw/master/assets/data/tsuchiya_normal.tar.gz	
-wget https://github.com/voice-statistics/voice-statistics.github.com/raw/master/assets/data/uemura_normal.tar.gz
-wget https://github.com/voice-statistics/voice-statistics.github.com/raw/master/assets/data/fujitou_normal.tar.gz
-
-# Hppy
-wget https://github.com/voice-statistics/voice-statistics.github.com/raw/master/assets/data/tsuchiya_happy.tar.gz
-wget https://github.com/voice-statistics/voice-statistics.github.com/raw/master/assets/data/uemura_happy.tar.gz
-wget https://github.com/voice-statistics/voice-statistics.github.com/raw/master/assets/data/fujitou_happy.tar.gz
- 
-# Angry
-wget https://github.com/voice-statistics/voice-statistics.github.com/raw/master/assets/data/tsuchiya_angry.tar.gz
-wget https://github.com/voice-statistics/voice-statistics.github.com/raw/master/assets/data/uemura_angry.tar.gz
-wget https://github.com/voice-statistics/voice-statistics.github.com/raw/master/assets/data/fujitou_angry.tar.gz
-```
-
-  - Extract features using [OpenSMILE](https://audeering.com/technology/opensmile/) and put them in the appropriate place.
-
-```
-tar zxvf tsuchiya_normal.tar.gz
-tar zxvf uemura_normal.tar.gz
-tar zxvf fujitou_normal.tar.gz
-tar zxvf tsuchiya_happy.tar.gz
-tar zxvf uemura_happy.tar.gz
-tar zxvf fujitou_happy.tar.gz
-tar zxvf tsuchiya_angry.tar.gz
-tar zxvf uemura_angry.tar.gz
-tar zxvf fujitou_angry.tar.gz
-
-mkdir -p wav
-mv fujitou_angry/*.wav   wav/.
-mv fujitou_happy/*.wav   wav/.
-mv fujitou_normal/*.wav  wav/.
-mv tsuchiya_angry/*.wav  wav/.
-mv tsuchiya_happy/*.wav  wav/.
-mv tsuchiya_normal/*.wav wav/.
-mv uemura_angry/*.wav    wav/.
-mv uemura_happy/*.wav    wav/.
-mv uemura_normal/*.wav   wav/.
-
-mkdir -p arff
-for f in wav/*.wav; do /Data/haradatm/src/opensmile-2.3.0/SMILExtract -C /Data/haradatm/src/opensmile-2.3.0/config/IS09_emotion.conf -I $f -O arff/`basename $f .wav`.arff ; done
-grep -E "^\'unknown" arff/fujitou*.arff  | tr "," "\t" | cut -f 2-385 > feature-fujitou.txt
-grep -E "^\'unknown" arff/tsuchiya*.arff | tr "," "\t" | cut -f 2-385 > feature-tsuchiya.txt
-grep -E "^\'unknown" arff/uemura*.arff   | tr "," "\t" | cut -f 2-385 > feature-uemura.txt
-ls -1 arff/fujitou*.arff  | cut -d "_" -f 2 > class-fujitou.txt
-ls -1 arff/tsuchiya*.arff | cut -d "_" -f 2 > class-tsuchiya.txt
-ls -1 arff/uemura*.arff   | cut -d "_" -f 2 > class-uemura.txt
-paste feature-fujitou.txt  class-fujitou.txt  > train-fujitou.txt
-paste feature-tsuchiya.txt class-tsuchiya.txt > train-tsuchiya.txt
-paste feature-uemura.txt   class-uemura.txt   > train-uemura.txt
-```
-
-  - Create pseudo data with 3 turn each continued and put them in the appropriate place.
-
-```
-python ../tools/sampling.py train-fujitou.txt  300 > rand-fujitou.txt
-python ../tools/sampling.py train-tsuchiya.txt 300 > rand-tsuchiya.txt
-python ../tools/sampling.py train-uemura.txt   300 > rand-uemura.txt
-python ../tools/prepare.py rand-fujitou.txt  > 01-test.txt
-python ../tools/prepare.py rand-tsuchiya.txt > 02-test.txt
-python ../tools/prepare.py rand-uemura.txt   > 03-test.txt
-cat 02-test.txt 03-test.txt > 01-train.txt
-cat 03-test.txt 01-test.txt > 02-train.txt
-cat 01-test.txt 02-test.txt > 03-train.txt
-```
+  - Downlod [IEMOCAP Datasets](https://sail.usc.edu/iemocap/release_form.php) and put them in `datasets/IEMOCAP_full_release`.
 
 ***Run and Evaluate***
 
-```
-python train_turn-mlp.py    --batchsize 100 --epoch 300           --unit 256 --train ../datasets/01-train.txt --test ../datasets/01-test.txt --out 01-turn-1 2>&1 | tee 01-turn-1.log
-python train_turn-lstm.py   --batchsize 100 --epoch 300           --unit 256 --train ../datasets/01-train.txt --test ../datasets/01-test.txt --out 01-turn-2 2>&1 | tee 01-turn-2.log
-python train_turn-nstep.py  --batchsize 100 --epoch 300 --layer 3 --unit 256 --train ../datasets/01-train.txt --test ../datasets/01-test.txt --out 01-turn-3 2>&1 | tee 01-turn-3.log
-python train_turn-bilstm.py --batchsize 100 --epoch 300 --layer 1 --unit 256 --train ../datasets/01-train.txt --test ../datasets/01-test.txt --out 01-turn-4 2>&1 | tee 01-turn-4.log
-python train_both-bilstm.py --batchsize 100 --epoch 300 --burnin 100 --layer_t 1 --unit_t 256 --layer_c 1 --unit_c 64 --train ../datasets/01-train.txt --test ../datasets/01-test.txt --out 01-both-1 2>&1 | tee 01-both-1.log
-```
-
-***Additional Evaluate***
+- Training for OpenSMILE features
 
 ```
-python train_turn-bilstm-with_cm.py --batchsize 100 --epoch 300 --layer 1 --unit 256 --train ../datasets/01-train.txt --test ../datasets/01-test.txt --out 01-turn-4 2>&1 | tee 01-turn-4-with_cm.log
-python test_turn-bilstm.py --model 01-turn-4/final.model --label 01-turn-4/labels.pkl --test ../datasets/01-test.txt --out 01-turn-4 | tee 01-turn-4-test.log```
+python train_iemocap-27.py --cw sum --gpu 0 --batchsize 100 --epoch 300 --layer 4 --unit 1000 --dropout 0.4 --weightdecay 0.0050 --optim adam \
+--train datasets/iemocap/smile/emotion/train.txt \
+--valid datasets/iemocap/smile/emotion/test.txt \
+--out results/iemocap-emotion-mlp-384_u1000_b100_e300_d040_adam_wd0050 2>&1 \
+| tee results/iemocap-emotion-mlp-384_u1000_b100_e300_d040_adam_wd0050.log
 ```
 
-***Input***
-
-- format
+- Training for Bert Embeddings features
 ```
-[#trun] [feature 1] ... [feature 384] [class of turn 1] [class of turn N] [class of ALL]
-```
-
-- 01-test.txt
-```
-3	1.793738e-02	6.840575e-05	1.786898e-02	･･･	-1.245339e-01	4.882097e+00	happy	happy	happy	happy
+python train_iemocap-27.py --cw sum --gpu 0 --batchsize 100 --epoch 300 --layer 4 --unit 1000 --dropout 0.4 --weightdecay 0.0050 --optim adam \
+--train datasets/iemocap/bert/train-sentence.txt \
+--valid datasets/iemocap/bert/test-sentence.txt \
+--out results/iemocap-bert-mlp-768_u1000_b100_e300_d040_adam_wd0050 2>&1 \
+| tee results/iemocap-bert-mlp-768_u1000_b010_e300_d040_adam_wd0050.log
 ```
 
+- Training for Fusion features (OpenSMile and Bert Embeddings)
+```
+python train_iemocap-27-fusion.py --cw sum --gpu 0 --batchsize 100 --epoch 300 --layer 4 --unit 1000 --dropout 0.4 --weightdecay 0.0010 --optim adam \
+--train datasets/iemocap/fusion/train-sentence.txt \
+--valid datasets/iemocap/fusion/test-sentence.txt \
+--out results/iemocap-fusion-mlp-1152_u1000_b100_e300_d040_adam_wd0010 2>&1 \
+| tee results/iemocap-fusion-mlp-1152_u1000_b100_e300_d040_adam_wd0010.log
+```
 
 ***Output***
+- use OpenSMILE features
+<img src="results/iemocap-emotion-mlp-384_u1000_b100_e300_d040_adam_wd0050.png" width="262px" height="261px"/>
+<img src="results/iemocap-emotion-mlp-384_u1000_b100_e300_d040_adam_wd0050-cm-early_stopped-uar.png.png" width="262px" height="261px"/>
 
-- 01-turn-1.log (use **train_both-bilstm.py**)
-```
-2018-07-05 12:22:05,491 - main - INFO - [  1] T/loss=1.111592 T/acc1=0.363333 T/acc2=0.000000 T/sec= 0.385696 D/loss=1.060488 D/acc1=0.370000 D/acc2=0.280000 D/sec= 1.075764 lr=0.001000
- :
-2018-07-05 12:31:59,461 - main - INFO - [300] T/loss=0.090317 T/acc1=0.980000 T/acc2=0.965000 T/sec= 0.724062 D/loss=0.650186 D/acc1=0.766667 D/acc2=0.790000 D/sec= 0.937508 lr=0.001000
-2018-07-05 12:32:00,059 - main - INFO - time spent: 597.156162 sec
-```
+- use Bert Embeddings features
+<img src="results/iemocap-bert-mlp-768_u1000_b100_e300_d040_adam_wd0050.png" width="262px" height="261px"/>
+<img src="results/iemocap-bert-mlp-768_u1000_b100_e300_d040_adam_wd0050-cm-early_stopped-uar.png" width="262px" height="261px"/>
 
-- 01-turn-4-with_cm.log (use **train_turn-bilstm-with_cm.py**)
-```
-2018-10-06 13:25:23,265 - main - INFO - [  1] T/loss=1.111592 T/acc1=0.363333 T/acc2=0.000000 T/sec= 0.333246 D/loss=1.049114 D/acc1=0.370000 D/acc2=0.000000 D/sec= 0.611305 lr=0.001000
- :
-2018-10-06 13:31:49,246 - <module> - INFO - time spent: 387.897333 sec
-
-==== Confusion matrix ====
-
-	angry	normal	happy
-angry	84	15	1
-normal	32	68	0
-happy	10	9	81
-
-==== Classification report ====
-
-             precision    recall  f1-score   support
-
-      angry       0.67      0.84      0.74       100
-     normal       0.74      0.68      0.71       100
-      happy       0.99      0.81      0.89       100
-
-avg / total       0.80      0.78      0.78       300
-
-2018-07-05 12:32:00,059 - main - INFO - time spent: 597.156162 sec
-```
-
-- 01-turn-4-test.log (use **test_turn-bilstm**)
-```
-angry:0.4094	happy:0.5775	happy:0.8487	
-angry:0.9498	normal:0.7697	angry:0.8968	
- :
-angry:0.5563	angry:0.7795	angry:0.9994	
-
-==== Confusion matrix ====
-
-	angry	normal	happy
-angry	84	15	1
-normal	32	68	0
-happy	10	9	81
-
-==== Classification report ====
-
-             precision    recall  f1-score   support
-
-      angry       0.67      0.84      0.74       100
-     normal       0.74      0.68      0.71       100
-      happy       0.99      0.81      0.89       100
-
-avg / total       0.80      0.78      0.78       300
-```
-
-- 0[1-3]-turn-1.png (use **train_mlp.py**)
-
-<img src="results/01-turn-1.png" width="262px" height="261px"/> <img src="results/02-turn-1.png" width="262px" height="261px"/> <img src="results/03-turn-1.png" width="262px" height="261px"/>
-
-- 0[1-3]-turn-2.png (use **train_turn-lstm.py**)
-
-<img src="results/01-turn-2.png" width="262px" height="261px"/> <img src="results/02-turn-2.png" width="262px" height="261px"/> <img src="results/03-turn-2.png" width="262px" height="261px"/>
-
-- 0[1-3]-turn-3.png (use **train_turn-nstep.py**)
-
-<img src="results/01-turn-3.png" width="262px" height="261px"/> <img src="results/02-turn-3.png" width="262px" height="261px"/> <img src="results/03-turn-3.png" width="262px" height="261px"/>
-
-- 0[1-3]-turn-4.png (use **train_turn-bilstm.py**)
-
-<img src="results/01-turn-4.png" width="262px" height="261px"/> <img src="results/02-turn-4.png" width="262px" height="261px"/> <img src="results/03-turn-4.png" width="262px" height="261px"/>
-
-- 0[1-3]-both-1.png (use **train_both-bilstm.py**)
-
-<img src="results/01-both-1.png" width="262px" height="261px"/> <img src="results/02-both-1.png" width="262px" height="261px"/> <img src="results/03-both-1.png" width="262px" height="261px"/>
-
-- 01-turn-4-train_cm.png (use **train_turn-bilstm-with_cm.py**)
-
-<img src="results/01-turn-4-train_cm.png"/>
-
-- 01-turn-4-test_cm.png (use **test_turn-bilstm.py** and **final.model**)
-
-<img src="results/01-turn-4-test_cm.png"/>
-
-
+- use Fusion features
+<img src="results/iemocap-fusion-mlp-1152_u1000_b100_e300_d040_adam_wd0010.png" width="262px" height="261px"/>
+<img src="results/iemocap-fusion-mlp-1152_u1000_b100_e300_d040_adam_wd0010-cm-early_stopped-uar.png" width="262px" height="261px"/>
