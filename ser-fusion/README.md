@@ -51,13 +51,10 @@ python train_iemocap-27-fusion.py --cw sum --gpu 0 --batchsize 100 --epoch 300 -
 
 ***Output***
 - use OpenSMILE features
-<img src="results/iemocap-emotion-mlp-384_u1000_b100_e300_d040_adam_wd0050.png" width="262px" height="261px"/>
-<img src="results/iemocap-emotion-mlp-384_u1000_b100_e300_d040_adam_wd0050-cm-early_stopped-uar.png.png" width="262px" height="261px"/>
+<img src="results/iemocap-emotion-mlp-384_u1000_b100_e300_d040_adam_wd0050.png" width="262px" height="262px"/> <img src="results/iemocap-emotion-mlp-384_u1000_b100_e300_d040_adam_wd0050-cm-early_stopped-uar.png" width="262px" height="262px"/>
 
 - use Bert Embeddings features
-<img src="results/iemocap-bert-mlp-768_u1000_b100_e300_d040_adam_wd0050.png" width="262px" height="261px"/>
-<img src="results/iemocap-bert-mlp-768_u1000_b100_e300_d040_adam_wd0050-cm-early_stopped-uar.png" width="262px" height="261px"/>
+<img src="results/iemocap-bert-mlp-768_u1000_b100_e300_d040_adam_wd0050.png" width="262px" height="262px"/> <img src="results/iemocap-bert-mlp-768_u1000_b100_e300_d040_adam_wd0050-cm-early_stopped-uar.png" width="262px" height="262px"/>
 
 - use Fusion features
-<img src="results/iemocap-fusion-mlp-1152_u1000_b100_e300_d040_adam_wd0010.png" width="262px" height="261px"/>
-<img src="results/iemocap-fusion-mlp-1152_u1000_b100_e300_d040_adam_wd0010-cm-early_stopped-uar.png" width="262px" height="261px"/>
+<img src="results/iemocap-fusion-mlp-1152_u1000_b100_e300_d040_adam_wd0010.png" width="262px" height="262px"/> <img src="results/iemocap-fusion-mlp-1152_u1000_b100_e300_d040_adam_wd0010-cm-early_stopped-uar.png" width="262px" height="262px"/>
