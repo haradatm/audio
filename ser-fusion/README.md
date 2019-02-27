@@ -51,10 +51,9 @@ python train_iemocap-fusion.py --cw sum --gpu 0 --batchsize 100 --epoch 300 --la
 
 ***Output***
 
-<img src="results/results.png" width="262px" height="262px"/>
+<img src="results/results.png"/>
  
-|OpenSMILE|Bert Embeddings|Fusion|
+|OpenSMILE|Bert Embeddings|Fusion (OpenSMILE + Bert)|
 |---|---|---|
 ![OpenSMILE](results/iemocap-emotion-mlp-384_u1000_b100_e300_d040_adam_wd0050.png)|![Bert](results/iemocap-bert-mlp-768_u1000_b100_e300_d040_adam_wd0050.png)|![Fusion](results/iemocap-fusion-mlp-1152_u1000_b100_e300_d040_adam_wd0010.png)
-|---|---|---|
 ![blstm](results/iemocap-emotion-mlp-384_u1000_b100_e300_d040_adam_wd0050-cm-early_stopped-uar.png)|![blstm](results/iemocap-bert-mlp-768_u1000_b100_e300_d040_adam_wd0050-cm-early_stopped-uar.png)|![Fusion](results/iemocap-fusion-mlp-1152_u1000_b100_e300_d040_adam_wd0010-cm-early_stopped-uar.png)
