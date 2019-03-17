@@ -32,7 +32,7 @@ import pickle
 import wave
 import python_speech_features as ps
 import bz2
-from sklearn.model_selection import ShuffleSplit
+from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import confusion_matrix, classification_report
@@ -121,20 +121,16 @@ def main():
     labels = {'neu': 0, 'ang': 1, 'sad': 2, 'hap': 3}
     # labels = {'MA_CH': 0, 'FE_AD': 1, 'MA_AD': 2, 'FE_EL': 3, 'FE_CH': 4, 'MA_EL': 5}
     X, Y, labels = load_train_data(args.train, labels=labels)
-
-    from sklearn.model_selection import train_test_split
-    X_train, X_eval, y_train, y_eval = train_test_split(X, Y, test_size=100, shuffle=True, stratify=Y, random_state=seed)
     n_class = len(labels)
 
-    print('# train X: {}, y: {}, dim: {}, counts: {}'.format(len(X_train), len(y_train), len(X_train[0]), [y_train.count(x) for x in sorted(labels.values())]))
-    print('# eval  X: {}, y: {}, dim: {}, counts: {}'.format(len(X_eval),  len(y_eval),  len(X_eval[0]),  [y_eval.count(x)  for x in sorted(labels.values())]))
+    print('# train X: {}, y: {}, dim: {}, counts: {}'.format(len(X), len(Y), len(X[0]), [Y.count(x) for x in sorted(labels.values())]))
     print('# class: {}, labels: {}'.format(n_class, labels))
 
     class_weight = None
     if args.cw:
         class_weight = {}
         for k, v in sorted(labels.items(), key=lambda x: x[1]):
-            class_weight[v] = len(y_train) / y_train.count(v)
+            class_weight[v] = len(Y) / Y.count(v)
     print('# class_weight: {}'.format(class_weight))
     print('')
 
@@ -146,17 +142,17 @@ def main():
     pipeline = Pipeline([('clf', classifier)])
 
     parameters = {
-        'clf__max_depth': [2, 4, 6],
+        'clf__max_depth': [-1, 5, 10, 20],
         'clf__n_estimators': [50, 100, 200],
     }
 
     print('# Tuning hyper-parameters for %s' % 'accuracy')
     print('')
 
-    cv = ShuffleSplit(n_splits=1, test_size=0.10, random_state=123)
+    cv = StratifiedKFold(n_splits=10, shuffle=True, random_state=123)
     clf = GridSearchCV(pipeline, param_grid=parameters, n_jobs=4, cv=cv, verbose=1, scoring='accuracy')
 
-    clf.fit(X_train, y_train)
+    clf.fit(X, Y)
     print('Best parameters set found on development set:')
     print('')
     print(clf.best_params_)
@@ -180,68 +176,14 @@ def main():
     print('')
     sys.stdout.flush()
 
-    index2label = {v: k for k, v in labels.items()}
-    sorted_labels = [k for k, _ in sorted(labels.items(), key=lambda x: x[1], reverse=False)]
-
-    y_true, y_pred = y_eval, clf.predict(X_eval)
-
-    print("\n==== Confusion matrix 1 (validating) ====\n")
-    cm = confusion_matrix([index2label[x] for x in y_true], [index2label[x] for x in y_pred], labels=sorted_labels)
-
-    print("\t{}".format("\t".join(sorted_labels)))
-    for label, counts in zip(sorted_labels, cm):
-        print("{}\t{}".format(label, "\t".join(map(str, counts))))
-
-    print("\n==== Confusion matrix 2 (validating) ====\n")
-    cm2 = np.apply_along_axis(lambda x: x / sum(x), 1, cm)
-    uar = np.nanmean(np.diag(cm2))
-
-    print("\t{}".format("\t".join(sorted_labels)))
-    for label, counts in zip(sorted_labels, cm2):
-        print("{}\t{}".format(label, "\t".join(map(lambda x: "%.2f" % x, counts))))
-
-    print("\nUAR = {:.6f}".format(float(uar)))
-    sys.stdout.flush()
-
-    # グラフ描画
-    if not args.noplot:
-        plt.figure()
-        plt.imshow(cm2, interpolation='nearest', cmap=plt.cm.Blues)
-        for i in range(cm2.shape[0]):
-            for j in range(cm2.shape[1]):
-                plt.text(j, i, "{:.2f}".format(cm2[i, j]), horizontalalignment="center", color="white" if cm2[i, j] > cm2.max() / 2 else "black")
-        plt.title('Confusion matrix: UAR = {:.6f}'.format(uar))
-        plt.colorbar()
-        tick_marks = np.arange(len(sorted_labels))
-        plt.xticks(tick_marks, sorted_labels, rotation=45)
-        plt.yticks(tick_marks, sorted_labels)
-        plt.tight_layout()
-        plt.ylabel('True label')
-        plt.xlabel('Predicted label')
-        plt.savefig('{}-cm-valid.png'.format(args.out))
-        # plt.savefig('{}-valid_cm.png'.format(os.path.splitext(os.path.basename(__file__))[0]))
-        # plt.show()
-        plt.close()
-
-    print("\n==== Classification report (validating) ====\n")
-    print(classification_report(
-        [sorted_labels[x] for x in y_true],
-        [sorted_labels[x] for x in y_pred]
-    ))
-    sys.stdout.flush()
-
-    print('')
-    sys.stdout.flush()
-
-    # すべての訓練データで fit
-    X = X_train + X_eval
-    y = y_train + y_eval
-
     clf = clf.best_estimator_
-    clf.fit(X, y)
+    clf.fit(X, Y)
 
     with open(os.path.join(args.out, 'model.pkl'), 'wb') as f:
         pickle.dump(clf, f)
+
+    with open(os.path.join(args.out, 'model.pkl'), 'rb') as f:
+        clf = pickle.load(f)
 
     # テストデータの読み込み
     X_test, y_test, labels = load_train_data(args.test, labels=labels)
@@ -250,6 +192,9 @@ def main():
     sys.stdout.flush()
 
     y_true, y_pred = y_test, clf.predict(X_test)
+
+    index2label = {v: k for k, v in labels.items()}
+    sorted_labels = [k for k, _ in sorted(labels.items(), key=lambda x: x[1], reverse=False)]
 
     print("\n==== Confusion matrix 1 (test) ====\n")
     cm = confusion_matrix([index2label[x] for x in y_true], [index2label[x] for x in y_pred], labels=sorted_labels)
