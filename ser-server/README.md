@@ -15,6 +15,10 @@ In addition, please add the project folder to PYTHONPATH and `conca install` the
 - `pickle, bz2`
 - `tornado`
 
+### ToDo ###
+- Support opus codec 
+- Visualize emotions
+
 ### Usage ###
 
 ***Data***
