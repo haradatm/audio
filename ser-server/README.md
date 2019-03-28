@@ -56,7 +56,9 @@ python train_dialog-lstm.py --use_classweight --gpu 0 --batchsize 8 --epoch 200 
 | tee 05-smile-lstm-0-l1-u300_b008_e200_d025_adam.log
 ```
 
-### Realtime Emotion detection ###
+### Rea-ltime Emotion recognition ###
+
+***Run and recognition***
 
 - Place the trained model file in `models`.
 
