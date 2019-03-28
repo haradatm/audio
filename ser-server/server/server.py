@@ -198,8 +198,8 @@ def emotion(voice):
     for v in voice:
         wave_name = make_wave_file(v)
 
-        command = "/Data/haradatm/src/opensmile-2.3.0/SMILExtract " \
-                  "-C /Data/haradatm/src/opensmile-2.3.0/config/IS09_emotion.conf " \
+        command = "/path_to/opensmile-2.3.0/SMILExtract " \
+                  "-C /path_to/opensmile-2.3.0/config/IS09_emotion.conf " \
                   "-noconsoleoutput " \
                   "-I {} " \
                   "-O /dev/stdout".format("{}".format(wave_name))

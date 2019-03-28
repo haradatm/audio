@@ -58,15 +58,33 @@ python train_dialog-lstm.py --use_classweight --gpu 0 --batchsize 8 --epoch 200 
 
 ### Realtime Emotion detection ###
 
-***Run Server***
+- Place the trained model file in `models`.
+
+- Run Server
 
 ```
+cd server
 python server.py --gpu 0 --layer 2 --unit 200 --model models/early_stopped-loss.model
 ```
 
+- Open http://localhost:8888/ in your Chrome browser and press F12 to access the developer tool 
+
+- Click on `Start` button at the top of windows
+
+- Input your voice with a microphone to estimate your emotions
+
 ***Output***
 
-  - Put a trained model file in `models`.
+- Output to developer tool console.
+
+```
+Vad | sampleRate: 44100 | hertzPerBin: 86.1328125 | iterationFrequency: 86.1328125 | iterationPeriod: 0.011609977324263039
+voice start
+voice stop
+ :
+```
+
+- Output to server console log.
 
 ```
 {
