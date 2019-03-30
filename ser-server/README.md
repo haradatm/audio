@@ -1,11 +1,11 @@
 # Real-time SER (Speech Emotion Recognition) example using OpenSMILE features
 
-### Description
+## Description
 
 This example code is a speech emotion recognition using OpenSMILE and Bert Embeddings features.
 See also 
 
-### Dependencies
+## Dependencies
 - python 3.6
 - chainer 3.4
 
@@ -15,13 +15,13 @@ In addition, please add the project folder to PYTHONPATH and `conca install` the
 - `pickle, bz2`
 - `tornado`
 
-### ToDo ###
-- Support opus codec 
-- Visualize emotions
+## TODOs
+- [ ] Support opus codec 
+- [ ] Visualize emotions
 
-### Usage ###
+## Usage
 
-***Data***
+**Data**
 
   - Downlod [IEMOCAP Datasets](https://sail.usc.edu/iemocap/release_form.php) and put them in `datasets/IEMOCAP_full_release`.
 
@@ -45,7 +45,7 @@ wc -l datasets/iemocap/smile/*-dialog.txt
       80 total
 ```
 
-***Train and Evaluate***
+**Train and Evaluate**
 
 ```
 python train_dialog-lstm.py --use_classweight --gpu 0 --batchsize 8 --epoch 200 --layer 1 --unit 200 --dropout 0.25 \
@@ -56,9 +56,9 @@ python train_dialog-lstm.py --use_classweight --gpu 0 --batchsize 8 --epoch 200 
 | tee 05-smile-lstm-0-l1-u300_b008_e200_d025_adam.log
 ```
 
-### Rea-ltime Emotion recognition ###
+## Real-time Emotion recognition
 
-***Run and recognition***
+**Run and recognition**
 
 - Place the trained model file in `models`.
 
@@ -75,7 +75,7 @@ python server.py --gpu 0 --layer 2 --unit 200 --model models/early_stopped-loss.
 
 - Input your voice with a microphone to estimate your emotions
 
-***Output***
+**Output**
 
 - Output to developer tool console.
 
